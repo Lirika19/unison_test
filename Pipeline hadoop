@@ -1,0 +1,41 @@
+pipeline { 
+    agent any
+    stages {
+        stage('Checkout Hadoop') {
+            steps {
+                script {
+                    def projectDir = 'hadoop_project'
+                    sh "mkdir -p ${projectDir}"
+                    dir(projectDir) {
+                        git url: 'https://github.com/apache/hadoop.git', branch: 'branch-3.3'
+                    }
+                }
+            }
+        }
+        stage('Build Hadoop with Maven') {
+            steps {
+                script {
+                    dir('hadoop_project') {
+                        sh 'mvn clean package -DskipTests'
+                    }
+                }
+            }
+        }
+        stage('Create Archive') {
+            steps {
+                script {
+                    dir('hadoop_project/hadoop-dist/target') {
+                        sh 'tar -czf hadoop-dist.tar.gz .'
+                    }
+                }
+            }
+        }
+        stage('Archive Artifact') {
+            steps {
+                dir('hadoop_project/hadoop-dist/target') {
+                    archiveArtifacts artifacts: 'hadoop-dist.tar.gz'
+                }
+            }
+        }
+    }
+}
